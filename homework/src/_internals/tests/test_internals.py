@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import sys
 import shutil
+import time
+import stat
 
 from homework.src._internals.count_words import count_words
 from homework.src._internals.preprocess_lines import preprocess_lines
@@ -57,13 +59,20 @@ def test_count_words():
     assert word_counts == {"hello": 2, "world": 1, "python": 1}
 
 
+def remove_readonly(func, path, _):
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
 def test_write_word_counts():
     output_folder = "data/test_output"
     word_counts = {"hello": 2, "world": 1, "python": 1}
 
     # Ensure the output folder is clean
     if os.path.exists(output_folder):
-        shutil.rmtree(output_folder)
+        # Espera y fuerza permisos si hay error
+        time.sleep(0.1)
+        shutil.rmtree(output_folder, onerror=remove_readonly)
 
     write_word_counts(output_folder, word_counts)
 
@@ -76,4 +85,4 @@ def test_write_word_counts():
     assert lines == ["hello\t2\n", "world\t1\n", "python\t1\n"]
 
     # Clean up
-    shutil.rmtree(output_folder)
+    shutil.rmtree(output_folder, onerror=remove_readonly)
